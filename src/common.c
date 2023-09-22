@@ -92,6 +92,33 @@ int server_sockaddr_init(const char *proto, const char *portstr,
   }
 }
 
+Action endianessSend(Action action) {
+  action.type = htonl(action.type);
+  action.coordinates[0] = htonl(action.coordinates[0]);
+  action.coordinates[1] = htonl(action.coordinates[1]);
+
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      action.board[i][j] = htonl(action.board[i][j]);
+    }
+  }
+
+  return action;
+}
+
+Action endianessRcv(Action action) {
+  action.type = ntohl(action.type);
+  action.coordinates[0] = ntohl(action.coordinates[0]);
+  action.coordinates[1] = ntohl(action.coordinates[1]);
+
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      action.board[i][j] = ntohl(action.board[i][j]);
+    }
+  }
+  return action;
+}
+
 void start(CampoMinado *campoMinado, char *nomeArquivo) {
   FILE *arquivo;
   char linha[20];
@@ -157,41 +184,41 @@ Action setActionClient() {
   scanf("%s", type);
 
   if (strcmp(type, "start") == 0) {
-    act.type = htonl(0);
+    act.type = 0;
   } else if (strcmp(type, "reveal") == 0) {
-    act.type = htonl(1);
+    act.type = 1;
     setCoordinates(coordinates);
   } else if (strcmp(type, "flag") == 0) {
-    act.type = htonl(2);
+    act.type = 2;
     setCoordinates(coordinates);
   } else if (strcmp(type, "remove_flag") == 0) {
-    act.type = htonl(4);
+    act.type = 4;
     setCoordinates(coordinates);
   } else if (strcmp(type, "reset") == 0) {
-    act.type = htonl(5);
+    act.type = 5;
   } else if (strcmp(type, "exit") == 0) {
-    act.type = htonl(7);
+    act.type = 7;
   } else if (strcmp(type, "game_over") == 0) {
-    act.type = htonl(8);
+    act.type = 8;
   } else {
-    act.type = htonl(-1);
+    act.type = -1;
   }
-  act.coordinates[0] = htonl(coordinates[0]);
-  act.coordinates[1] = htonl(coordinates[1]);
+  act.coordinates[0] = coordinates[0];
+  act.coordinates[1] = coordinates[1];
   return act;
 }
 
-void printEstado(CampoMinado *campoMinado) {
+void printBoard(int board[4][4]) {
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
-      if (campoMinado->estado[i][j] == BOMB) {
+      if (board[i][j] == BOMB) {
         printf("*");
-      } else if (campoMinado->estado[i][j] == HIDDEN) {
+      } else if (board[i][j] == HIDDEN) {
         printf("-");
-      } else if (campoMinado->estado[i][j] == FLAG) {
+      } else if (board[i][j] == FLAG) {
         printf(">");
       } else {
-        printf("%d", campoMinado->estado[i][j]);
+        printf("%d", board[i][j]);
       }
       if (j != 3) {
         printf("\t\t");
@@ -199,4 +226,10 @@ void printEstado(CampoMinado *campoMinado) {
     }
     printf("\n");
   }
+}
+
+void printAction(Action action) {
+  printf("Type: %d  %d,%d\n", action.type, action.coordinates[0],
+         action.coordinates[1]);
+  printBoard(action.board);
 }

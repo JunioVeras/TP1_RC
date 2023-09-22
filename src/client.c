@@ -1,14 +1,13 @@
+#include <arpa/inet.h>
 #include <common.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 
-#define BUFSZ 1024
-
 int main(int argc, char **argv) {
+  // criacao do socket e conexao com servidor
   struct sockaddr_storage storage;
   if (addrparse(argv[1], argv[2], &storage) != 0) {
     logexit("addr");
@@ -29,30 +28,30 @@ int main(int argc, char **argv) {
 
   printf("connected to %s\n", addrstr);
 
-  char buf[BUFSZ];
-  memset(buf, 0, BUFSZ);
-  printf("mensagem> ");
-  fgets(buf, BUFSZ - 1, stdin);
-  
-  int count = send(s, buf, strlen(buf) + 1, 0);
-
-  if (count != strlen(buf) + 1) {
-    logexit("send");
-  }
-
-  memset(buf, 0, BUFSZ);
-  unsigned total = 0;
   while (1) {
-    count = recv(s, buf + total, BUFSZ - total, 0);
-    if (count == 0) {
-      break;
-    }
-    total += count;
-  }
-  close(s);
+    // envio de mensagens
+    char buf[sizeof(Action)];
+    memset(buf, 0, sizeof(Action));
+    Action action = setActionClient();
+    printAction(action);
+    action = endianessSend(action);
+    memcpy(buf, &action, sizeof(Action));
 
-  printf("received %d bytes\n", total);
-  puts(buf);
+    int count = send(s, buf, sizeof(Action), 0);
+
+    if (count != sizeof(Action)) {
+      logexit("send");
+    }
+
+    // recebimento de mensagens
+    memset(buf, 0, sizeof(Action));
+    count = recv(s, buf, sizeof(Action), 0);
+    memcpy(&action, buf, sizeof(Action));
+    action = endianessRcv(action);
+    printAction(action);
+  }
+
+  close(s);
 
   exit(1);
 

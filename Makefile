@@ -5,7 +5,7 @@ INC = include
 BIN = bin
 OBJS = $(OBJ)/common.o  
 HDRS = $(INC)/common.h
-CFLAGS = -Wall -c -I $(INC)
+CFLAGS = -Wall -c -I $(INC) -g
 
 EXE1 = $(BIN)/server.exe
 EXE2 = $(BIN)/client.exe
