@@ -20,18 +20,27 @@ int main(int argc, char** argv) {
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
 
-    printf("connected to %s\n", addrstr);
+    // printf("connected to %s\n", addrstr);
+    int board[4][4];
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            board[i][j] = HIDDEN;
+        }
+    }
 
     while(1) {
         // envio de mensagens
         char buf[sizeof(Action)];
         memset(buf, 0, sizeof(Action));
-        Action action = setActionClient();
-        printAction(action);
+        Action action;
+        do {
+            action = setActionClient(board);
+        } while(action.type != -1);
+        // printAction(action);
         action = endianessSend(action);
         memcpy(buf, &action, sizeof(Action));
 
-        int count = send(s, buf, sizeof(Action), 0);
+        size_t count = send(s, buf, sizeof(Action), 0);
 
         if(count != sizeof(Action)) {
             logexit("send");
@@ -42,9 +51,38 @@ int main(int argc, char** argv) {
         count = recv(s, buf, sizeof(Action), 0);
         memcpy(&action, buf, sizeof(Action));
         action = endianessRcv(action);
-        printAction(action);
+        // printAction(action);
 
         // tratamento
+        if(action.type == 3) {
+            for(int i = 0; i < 4; i++) {
+                for(int j = 0; j < 4; j++) {
+                    board[i][j] = action.board[i][j];
+                }
+            }
+            printBoard(action.board);
+        }
+        else if(action.type == 6) {
+            printf("YOU WIN!\n");
+            printBoard(action.board);
+            for(int i = 0; i < 4; i++) {
+                for(int j = 0; j < 4; j++) {
+                    board[i][j] = HIDDEN;
+                }
+            }
+        }
+        else if(action.type == 8) {
+            printf("GAME OVER!\n");
+            printBoard(action.board);
+            for(int i = 0; i < 4; i++) {
+                for(int j = 0; j < 4; j++) {
+                    board[i][j] = HIDDEN;
+                }
+            }
+        }
+        else {
+            logexit("tratamento");
+        }
     }
 
     close(s);

@@ -8,6 +8,9 @@
 #include <unistd.h>
 
 int main(int argc, char** argv) {
+    CampoMinado campoMinado;
+    start(&campoMinado, argv[4]);
+
     // criacao do socket e conexao com cliente
     struct sockaddr_storage storage;
     if(server_sockaddr_init(argv[1], argv[2], &storage) != 0) {
@@ -29,48 +32,59 @@ int main(int argc, char** argv) {
         logexit("bind");
     }
 
-    if(listen(s, 1)) {
-        logexit("listen");
-    }
-
-    char addrstr[BUFSZ];
-    addrtostr(addr, addrstr, BUFSZ);
-
-    printf("bound to %s, waiting connections\n", addrstr);
-
-    struct sockaddr_storage cstorage;
-    struct sockaddr* caddr = (struct sockaddr*)(&cstorage);
-    socklen_t caddrlen = sizeof(cstorage);
-
-    int csock = accept(s, caddr, &caddrlen);
-    if(csock == -1) {
-        logexit("accept");
-    }
-
-    char caddrstr[BUFSZ];
-    addrtostr(caddr, caddrstr, BUFSZ);
-    printf("[log] connection from %s\n", caddrstr);
-
     while(1) {
-        // recebimento de mensagens
-        char buf[sizeof(Action)];
-        memset(buf, 0, sizeof(Action));
-        Action action;
-        size_t count = recv(csock, buf, sizeof(Action), 0);
-        memcpy(&action, buf, sizeof(Action));
-        action = endianessRcv(action);
-        printAction(action);
-
-        // tratamento
-
-        // envio de mensagens
-        count = send(csock, buf, sizeof(Action), 0);
-        if(count != sizeof(Action)) {
-            logexit("send");
+        if(listen(s, 1)) {
+            logexit("listen");
         }
+
+        // char addrstr[BUFSZ];
+        // addrtostr(addr, addrstr, BUFSZ);
+        // printf("bound to %s, waiting connections\n", addrstr);
+
+        struct sockaddr_storage cstorage;
+        struct sockaddr* caddr = (struct sockaddr*)(&cstorage);
+        socklen_t caddrlen = sizeof(cstorage);
+
+        int csock = accept(s, caddr, &caddrlen);
+        if(csock == -1) {
+            logexit("accept");
+        }
+
+        // char caddrstr[BUFSZ];
+        // addrtostr(caddr, caddrstr, BUFSZ);
+        // printf("[log] connection from %s\n", caddrstr);
+
+        printf("client connected\n");
+
+        while(1) {
+            // recebimento de mensagens
+            char buf[sizeof(Action)];
+            memset(buf, 0, sizeof(Action));
+            Action action;
+            size_t count = recv(csock, buf, sizeof(Action), 0);
+            memcpy(&action, buf, sizeof(Action));
+            action = endianessRcv(action);
+            // printAction(action);
+
+            // tratamento
+            Action newAction;
+            newAction = setActionServer(&campoMinado, action, argv[4]);
+            if(newAction.type == -2) {
+                break;
+            }
+
+            // envio de mensagens
+            memset(buf, 0, sizeof(Action));
+            newAction = endianessSend(newAction);
+            memcpy(buf, &newAction, sizeof(Action));
+            count = send(csock, buf, sizeof(Action), 0);
+            if(count != sizeof(Action)) {
+                logexit("send");
+            }
+        }
+        close(csock);
     }
 
-    close(csock);
     close(s);
 
     exit(1);

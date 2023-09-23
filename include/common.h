@@ -34,9 +34,11 @@ Action endianessSend(Action action);
 
 Action endianessRcv(Action action);
 
+Action setActionServer(CampoMinado* campoMinado, Action action, char* nomeArquivo);
+
 void start(CampoMinado* campoMinado, char* nomeArquivo);
 
-void reveal(int* coordinates, CampoMinado* campoMinado);
+int reveal(int* coordinates, CampoMinado* campoMinado);
 
 void flag(int* coordinates, CampoMinado* campoMinado);
 
@@ -46,7 +48,7 @@ void reset(CampoMinado* campoMinado);
 
 void setCoordinates(int* coordinates);
 
-Action setActionClient();
+Action setActionClient(int board[4][4]);
 
 void printBoard(int board[4][4]);
 

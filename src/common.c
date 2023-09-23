@@ -119,6 +119,69 @@ Action endianessRcv(Action action) {
     return action;
 }
 
+void state(CampoMinado* campoMinado, Action* action) {
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            action->board[i][j] = campoMinado->estado[i][j];
+        }
+    }
+    action->type = 3;
+    action->coordinates[0] = -1;
+    action->coordinates[1] = -1;
+}
+
+Action setActionServer(CampoMinado* campoMinado, Action action, char* nomeArquivo) {
+    Action newAction;
+    // start
+    if(action.type == 0) {
+        start(campoMinado, nomeArquivo);
+        state(campoMinado, &newAction);
+    }
+    // reveal
+    else if(action.type == 1) {
+        if(reveal(action.coordinates, campoMinado) == 0) {
+            state(campoMinado, &newAction);
+        }
+        else {
+            newAction.type = 8;
+            for(int i = 0; i < 4; i++) {
+                for(int j = 0; j < 4; j++) {
+                    newAction.board[i][j] = campoMinado->resposta[i][j];
+                }
+            }
+            newAction.type = 8;
+            newAction.coordinates[0] = -1;
+            newAction.coordinates[1] = -1;
+        }
+    }
+    // flag
+    else if(action.type == 2) {
+        flag(action.coordinates, campoMinado);
+        state(campoMinado, &newAction);
+    }
+    // remove_flag
+    else if(action.type == 4) {
+        remove_flag(action.coordinates, campoMinado);
+        state(campoMinado, &newAction);
+    }
+    // reset
+    else if(action.type == 5) {
+        reset(campoMinado);
+        state(campoMinado, &newAction);
+        printf("starting new game\n");
+    }
+    // exit
+    else if(action.type == 7) {
+        reset(campoMinado);
+        printf("client disconnected\n");
+        newAction.type = -2;
+    }
+    else {
+        logexit("tratamento");
+    }
+    return newAction;
+}
+
 void start(CampoMinado* campoMinado, char* nomeArquivo) {
     FILE* arquivo;
     char linha[20];
@@ -149,8 +212,12 @@ void start(CampoMinado* campoMinado, char* nomeArquivo) {
     fclose(arquivo);
 }
 
-void reveal(int* coordinates, CampoMinado* campoMinado) {
+int reveal(int* coordinates, CampoMinado* campoMinado) {
+    if(campoMinado->resposta[coordinates[0]][coordinates[1]] == BOMB) {
+        return -1;
+    }
     campoMinado->estado[coordinates[0]][coordinates[1]] = campoMinado->resposta[coordinates[0]][coordinates[1]];
+    return 0;
 }
 
 void flag(int* coordinates, CampoMinado* campoMinado) { campoMinado->estado[coordinates[0]][coordinates[1]] = FLAG; }
@@ -173,7 +240,7 @@ void setCoordinates(int* coordinates) {
     sscanf(input, "%d,%d", &coordinates[0], &coordinates[1]);
 }
 
-Action setActionClient() {
+Action setActionClient(int board[4][4]) {
     Action act;
     char type[20];
     int coordinates[2] = {-1, -1};
@@ -186,10 +253,26 @@ Action setActionClient() {
     else if(strcmp(type, "reveal") == 0) {
         act.type = 1;
         setCoordinates(coordinates);
+        if(coordinates[0] > 3 || coordinates[0] < 0 || coordinates[1] > 3 || coordinates[1] < 0) {
+            printf("error: invalid cell\n");
+            act.type = -1;
+        }
+        else if(board[coordinates[0]][coordinates[1]] != HIDDEN) {
+            printf("error: cell already revealed\n");
+            act.type = -1;
+        }
     }
     else if(strcmp(type, "flag") == 0) {
         act.type = 2;
         setCoordinates(coordinates);
+        if(board[coordinates[0]][coordinates[1]] == FLAG) {
+            printf("error: cell already has a flag\n");
+            act.type = -1;
+        }
+        else if(board[coordinates[0]][coordinates[1]] != HIDDEN) {
+            printf("error: cannot insert flag in revealed cell\n");
+            act.type = -1;
+        }
     }
     else if(strcmp(type, "remove_flag") == 0) {
         act.type = 4;
@@ -205,6 +288,7 @@ Action setActionClient() {
         act.type = 8;
     }
     else {
+        printf("error: command not found\n");
         act.type = -1;
     }
     act.coordinates[0] = coordinates[0];
@@ -233,6 +317,7 @@ void printBoard(int board[4][4]) {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 void printAction(Action action) {
