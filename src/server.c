@@ -10,6 +10,7 @@
 int main(int argc, char** argv) {
     CampoMinado campoMinado;
     start(&campoMinado, argv[4]);
+    printBoard(campoMinado.resposta);
 
     // criacao do socket e conexao com cliente
     struct sockaddr_storage storage;
