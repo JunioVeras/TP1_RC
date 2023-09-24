@@ -139,8 +139,18 @@ Action setActionServer(CampoMinado* campoMinado, Action action, char* nomeArquiv
     }
     // reveal
     else if(action.type == 1) {
-        if(reveal(action.coordinates, campoMinado) == 0) {
+        int acao = reveal(action.coordinates, campoMinado);
+        if(acao == 0) {
             state(campoMinado, &newAction);
+        } else if(acao == 1) {
+            for(int i = 0; i < 4; i++) {
+                for(int j = 0; j < 4; j++) {
+                    newAction.board[i][j] = campoMinado->resposta[i][j];
+                }
+            }
+            newAction.type = 6;
+            newAction.coordinates[0] = -1;
+            newAction.coordinates[1] = -1;
         }
         else {
             newAction.type = 8;
@@ -217,6 +227,23 @@ int reveal(int* coordinates, CampoMinado* campoMinado) {
         return -1;
     }
     campoMinado->estado[coordinates[0]][coordinates[1]] = campoMinado->resposta[coordinates[0]][coordinates[1]];
+
+    int num_bombas = 0;
+    int num_hidden_or_flag = 0;
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            if(campoMinado->resposta[i][j] == BOMB) {
+                num_bombas++;
+            }
+            if(campoMinado->estado[i][j] == HIDDEN || campoMinado->estado[i][j] == FLAG) {
+                num_hidden_or_flag++;
+            }
+        }
+    }
+    if(num_bombas == num_hidden_or_flag) {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -257,7 +284,7 @@ Action setActionClient(int board[4][4]) {
             printf("error: invalid cell\n");
             act.type = -1;
         }
-        else if(board[coordinates[0]][coordinates[1]] != HIDDEN) {
+        else if(board[coordinates[0]][coordinates[1]] != HIDDEN && board[coordinates[0]][coordinates[1]] != FLAG) {
             printf("error: cell already revealed\n");
             act.type = -1;
         }

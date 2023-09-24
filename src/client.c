@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
         Action action;
         do {
             action = setActionClient(board);
-        } while(action.type != -1);
+        } while(action.type == -1);
         // printAction(action);
         action = endianessSend(action);
         memcpy(buf, &action, sizeof(Action));
