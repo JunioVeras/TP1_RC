@@ -38,10 +38,6 @@ int main(int argc, char** argv) {
             logexit("listen");
         }
 
-        // char addrstr[BUFSZ];
-        // addrtostr(addr, addrstr, BUFSZ);
-        // printf("bound to %s, waiting connections\n", addrstr);
-
         struct sockaddr_storage cstorage;
         struct sockaddr* caddr = (struct sockaddr*)(&cstorage);
         socklen_t caddrlen = sizeof(cstorage);
@@ -50,10 +46,6 @@ int main(int argc, char** argv) {
         if(csock == -1) {
             logexit("accept");
         }
-
-        // char caddrstr[BUFSZ];
-        // addrtostr(caddr, caddrstr, BUFSZ);
-        // printf("[log] connection from %s\n", caddrstr);
 
         printf("client connected\n");
 
@@ -65,7 +57,6 @@ int main(int argc, char** argv) {
             size_t count = recv(csock, buf, sizeof(Action), 0);
             memcpy(&action, buf, sizeof(Action));
             action = endianessRcv(action);
-            // printAction(action);
 
             // tratamento
             Action newAction;
@@ -76,11 +67,15 @@ int main(int argc, char** argv) {
 
             // envio de mensagens
             memset(buf, 0, sizeof(Action));
+            int type = newAction.type;
             newAction = endianessSend(newAction);
             memcpy(buf, &newAction, sizeof(Action));
             count = send(csock, buf, sizeof(Action), 0);
             if(count != sizeof(Action)) {
                 logexit("send");
+            }
+            if(type == 8 || type == 6) {
+                break;
             }
         }
         close(csock);

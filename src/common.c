@@ -142,7 +142,8 @@ Action setActionServer(CampoMinado* campoMinado, Action action, char* nomeArquiv
         int acao = reveal(action.coordinates, campoMinado);
         if(acao == 0) {
             state(campoMinado, &newAction);
-        } else if(acao == 1) {
+        }
+        else if(acao == 1) {
             for(int i = 0; i < 4; i++) {
                 for(int j = 0; j < 4; j++) {
                     newAction.board[i][j] = campoMinado->resposta[i][j];
@@ -153,7 +154,6 @@ Action setActionServer(CampoMinado* campoMinado, Action action, char* nomeArquiv
             newAction.coordinates[1] = -1;
         }
         else {
-            newAction.type = 8;
             for(int i = 0; i < 4; i++) {
                 for(int j = 0; j < 4; j++) {
                     newAction.board[i][j] = campoMinado->resposta[i][j];
@@ -250,7 +250,9 @@ int reveal(int* coordinates, CampoMinado* campoMinado) {
 void flag(int* coordinates, CampoMinado* campoMinado) { campoMinado->estado[coordinates[0]][coordinates[1]] = FLAG; }
 
 void remove_flag(int* coordinates, CampoMinado* campoMinado) {
-    campoMinado->estado[coordinates[0]][coordinates[1]] = HIDDEN;
+    if(campoMinado->estado[coordinates[0]][coordinates[1]] == FLAG) {
+        campoMinado->estado[coordinates[0]][coordinates[1]] = HIDDEN;
+    }
 }
 
 void reset(CampoMinado* campoMinado) {
@@ -344,7 +346,6 @@ void printBoard(int board[4][4]) {
         }
         printf("\n");
     }
-    printf("\n");
 }
 
 void printAction(Action action) {

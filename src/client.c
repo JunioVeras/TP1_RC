@@ -20,13 +20,14 @@ int main(int argc, char** argv) {
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
 
-    // printf("connected to %s\n", addrstr);
     int board[4][4];
     for(int i = 0; i < 4; i++) {
         for(int j = 0; j < 4; j++) {
             board[i][j] = HIDDEN;
         }
     }
+
+    int started = 0;
 
     while(1) {
         // envio de mensagens
@@ -35,8 +36,10 @@ int main(int argc, char** argv) {
         Action action;
         do {
             action = setActionClient(board);
-        } while(action.type == -1);
-        // printAction(action);
+            if(action.type == 0) {
+                started = 1;
+            }
+        } while(action.type == -1 || started == 0);
         action = endianessSend(action);
         memcpy(buf, &action, sizeof(Action));
 
@@ -51,7 +54,6 @@ int main(int argc, char** argv) {
         count = recv(s, buf, sizeof(Action), 0);
         memcpy(&action, buf, sizeof(Action));
         action = endianessRcv(action);
-        // printAction(action);
 
         // tratamento
         if(action.type == 3) {
@@ -65,29 +67,19 @@ int main(int argc, char** argv) {
         else if(action.type == 6) {
             printf("YOU WIN!\n");
             printBoard(action.board);
-            for(int i = 0; i < 4; i++) {
-                for(int j = 0; j < 4; j++) {
-                    board[i][j] = HIDDEN;
-                }
-            }
+            break;
         }
         else if(action.type == 8) {
             printf("GAME OVER!\n");
             printBoard(action.board);
-            for(int i = 0; i < 4; i++) {
-                for(int j = 0; j < 4; j++) {
-                    board[i][j] = HIDDEN;
-                }
-            }
+            break;
         }
         else {
-            logexit("tratamento");
+            break;
         }
     }
 
     close(s);
-
-    exit(1);
 
     return 0;
 }

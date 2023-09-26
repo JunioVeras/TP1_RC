@@ -7,16 +7,16 @@ OBJS = $(OBJ)/common.o
 HDRS = $(INC)/common.h
 CFLAGS = -Wall -c -I $(INC) -g
 
-EXE1 = $(BIN)/server.exe
-EXE2 = $(BIN)/client.exe
+EXE1 = $(BIN)/server
+EXE2 = $(BIN)/client
 
 all: $(EXE1) $(EXE2)
 
 $(EXE1): $(OBJS) $(OBJ)/server.o
-	$(CC) -o $(BIN)/server.exe $(OBJS) $(OBJ)/server.o
+	$(CC) -o $(BIN)/server $(OBJS) $(OBJ)/server.o
 
 $(EXE2): $(OBJS) $(OBJ)/client.o
-	$(CC) -o $(BIN)/client.exe $(OBJS) $(OBJ)/client.o
+	$(CC) -o $(BIN)/client $(OBJS) $(OBJ)/client.o
 
 $(OBJ)/client.o: $(HDRS) $(SRC)/client.c
 	$(CC) $(CFLAGS) -o $(OBJ)/client.o $(SRC)/client.c
